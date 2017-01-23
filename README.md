@@ -3,8 +3,7 @@ Simple Oblique projection program
 
 ## Description
 
-Input: any csv file with 3 or more coloumns of numbers (3 dimensional array or greater)
-Output: a 2D visualastion of the generated 2D data that came from the inputed csv in a .png file
+
 
 ## Installation
 
@@ -16,6 +15,24 @@ Installing from GitHub:
 
 ## Usage
 
+Place your data in a csv file in data/ folder formated as such
+# Example basic Cube
+# Leave 1st row empty
+'''
+|    |    |    |
+| -5 | -5 | -5 |
+| -5 |  5 | -5 |
+|  5 |  5 | -5 |
+|  5 | -5 | -5 |
+ etc..
+'''
+
+Within main.rs change the parameter of function call oblique_projection_from_nd 
+in main to your dataset name.
+
+Then build and run
+    $ cargo run
+
 ## Data Sets
 
 Data sets used in examples
@@ -23,3 +40,8 @@ Data sets used in examples
 Dorothea data set from
     http://archive.ics.uci.edu/ml/machine-learning-databases/dorothea/DOROTHEA/
 
+## Contributing
+Feel free to contribute :) 
+
+## License
+Please see the included LICENSE
