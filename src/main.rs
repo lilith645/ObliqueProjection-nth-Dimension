@@ -27,7 +27,6 @@ extern crate csv;
 use std::f64;
 use std::fs::File;
 use std::path::Path;
-use std::fmt::Display;
 
 #[derive(Copy, Clone)] // Some random thing to define the struct to do stuff? i think?
 struct Vertex3f {
@@ -47,16 +46,26 @@ fn array_to_image(image: &mut Vec<[f64; 2]>) {
     
     let mut image_lengthx: i64 = 0;
     let mut image_lengthy: i64 = 0;
-    
+  
     for i in image.iter_mut() {
-      i[0] *= 10.0;
-      i[1] *= 10.0;
-      
-      if i[0] as i64 > image_lengthx {
-        image_lengthx = i[0] as i64;
+      if i[0] < 0.0 {
+        if i[0] as i64*-1 > image_lengthx {
+          image_lengthx = i[0] as i64*-1;
+        }
+      } else {
+        if i[0] as i64 > image_lengthx {
+          image_lengthx = i[0] as i64;
+        }
       }
-      if i[1] as i64 > image_lengthy {
-        image_lengthy = i[1] as i64;
+
+      if i[1] < 0.0 {
+        if i[1] as i64 * -1 > image_lengthy {
+          image_lengthy = i[1] as i64*-1;
+        }
+      } else {
+        if i[1] as i64 > image_lengthy {
+          image_lengthy = i[1] as i64;
+        }
       }
     } 
     
@@ -87,16 +96,16 @@ fn array_to_image(image: &mut Vec<[f64; 2]>) {
       }
     }
     
-    let sizex: u32 = image_lengthx as u32 * 2; 
-    let sizey: u32 = image_lengthy as u32 * 2;
+    let sizex: u64 = image_lengthx as u64 * 2; 
+    let sizey: u64 = image_lengthy as u64 * 2;
     
     println!("    image Width: {} Height: {}", sizex, sizey);
     
-    let mut imgbuffer = image::ImageBuffer::new(sizex, sizey);
+    let mut imgbuffer = image::ImageBuffer::new(sizex as u32, sizey as u32);
     
     for (x, y, pixel) in imgbuffer.enumerate_pixels_mut() {
-      let crnt_px: i64 = (x as i32 - sizex as i32 /2) as i64;
-      let crnt_py: i64 = (y as i32 - sizey as i32 /2) as i64;
+      let crnt_px: i64 = (x as i64 - sizex as i64 /2) as i64;
+      let crnt_py: i64 = (y as i64 - sizey as i64 /2) as i64;
       
       for i in image.iter() {
 
@@ -114,19 +123,6 @@ fn array_to_image(image: &mut Vec<[f64; 2]>) {
     let _ = image::ImageLuma8(imgbuffer).save(fout, image::PNG);
     
     println!("Projection created!!");
-}
-
-fn read_3d_data(file: &str) -> Vec<[f64; 3]> {
-    let mut array_data = Vec::new();
-    
-    let mut rdr = csv::Reader::from_file(file).unwrap();
-    for record in rdr.decode() {
-        let (x, y, z): (f64, f64, f64) = record.unwrap();
-        array_data.push([x as f64, y as f64, z as f64]);
-        println!("{}, {}, {}", x, y, z);
-    }
-    
-    array_data
 }
 
 fn read_nd_data(file: &str) -> Vec<Vec<f64>> {
@@ -151,22 +147,7 @@ fn read_nd_data(file: &str) -> Vec<Vec<f64>> {
         }
       }
     }
-    
     array_data
-}
-
-fn oblique_projection_from_3d(file: &str) {
-  let data = read_3d_data(file);
-  
-  let angle: f64 = 63.4;
-  let mut array_2d = Vec::new();
-  
-  for position in data {
-    let (x, y, z): (f64, f64, f64) = (position[0], position[1], position[2]);
-    array_2d.push([x + 0.5*z*angle.cos(), y + 0.5*z*angle.sin()])
-  }
-  
-  array_to_image(&mut array_2d);
 }
 
 fn oblique_projection_from_nd(file: &str) {
@@ -176,38 +157,83 @@ fn oblique_projection_from_nd(file: &str) {
   
   let mut final_array = data;
   
-  let numPoints = final_array.len();
-  let mut numDim = final_array[0].len();
+  let num_points = final_array.len();
+  let mut num_dim = final_array[0].len();
   
-  while numDim > 2 {
+  while num_dim > 2 {
     let mut temp_data: Vec<Vec<f64>> = Vec::new(); 
     
-    for i in 0..numPoints {
+    for i in 0..num_points {
       temp_data.push(Vec::new());
-      for j in 0..numDim-1 {
+      for j in 0..num_dim-1 {
         if j%2 == 0 {
-          temp_data[i].push(final_array[i][j] + 0.5*final_array[i][numDim-1]*angle.cos());
+          temp_data[i].push(final_array[i][j] as f64 + 0.5*final_array[i][num_dim-1]*angle.cos() as f64);
         } else {
-          temp_data[i].push(final_array[i][j] + 0.5*final_array[i][numDim-1]*angle.sin());
+          temp_data[i].push(final_array[i][j] as f64 + 0.5*final_array[i][num_dim-1]*angle.sin() as f64);
         }
       }
     }
-    numDim-=1;
+    num_dim-=1;
 
     final_array.clear();
     final_array = temp_data;
   }
+  let mut largest_num: f64 = 0.0;
+  for i in 0..final_array.len() {
+    for j in 0..final_array[i].len() {
+      if largest_num < final_array[i][j] {
+        largest_num = final_array[i][j];
+      }
+    }
+  }
   
+  if largest_num > 10000.0 {
+    let mut larger_than_1000: bool = true;
+  
+    while larger_than_1000 {
+      let mut check: bool = false;
+      for i in 0..final_array.len() {
+        for j in 0..final_array[i].len() {
+          if final_array[i][j] > 10000.0 {
+            check = true;
+          }
+          final_array[i][j] /= 10.0;
+        }
+      }
+      if check == false {
+        larger_than_1000 = false;
+      }
+    }
+  } else if largest_num < -10000.0 {
+    let mut smaller_than_100: bool = true;
+    
+    while smaller_than_100 {
+      let mut check: bool = false;
+      for i in 0..final_array.len() {
+        for j in 0..final_array[i].len() {
+          if final_array[i][j] < -10000.0 {
+            check = true;
+          }
+          final_array[i][j] *= 10.0;
+          println!("{}", final_array[i][j]);
+        }
+      }
+      if check == false {
+        smaller_than_100 = false;
+      }
+    }
+  }
+  
+
   let mut array_2d: Vec<[f64; 2]> = Vec::new();
-  
-  for i in 0..numPoints {
+
+  for i in 0..num_points {
     array_2d.push([final_array[i][0], final_array[i][1]]);
   }
   
   array_to_image(&mut array_2d);
 }
 
-fn main() {    
-  // oblique_projection_from_3d("./data/cube.csv");
-  oblique_projection_from_nd("./data/cube.csv");
+fn main() {
+  oblique_projection_from_nd("./data/DorotheaData.csv");
 }
