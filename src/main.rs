@@ -129,6 +129,32 @@ fn read_3d_data(file: &str) -> Vec<[f64; 3]> {
     array_data
 }
 
+fn read_nd_data(file: &str) -> Vec<Vec<f64>> {
+    let mut temp_array_data = Vec::new();
+    
+    let mut rdr = csv::Reader::from_file(file).unwrap();
+    
+    for row in rdr.records().map(|r| r.unwrap()) {
+      let data = row;
+      temp_array_data.push(data);
+    }
+
+    let mut array_data = Vec::new();
+
+    for i in 0..temp_array_data.len() {
+      array_data.push(Vec::new());
+      for j in 0..temp_array_data[i].len() {
+        if temp_array_data[i][j].is_empty() {
+          array_data[i].push(0.0 as f64);
+        } else {
+          array_data[i].push( temp_array_data[i][j].parse::<f64>().unwrap());
+        }
+      }
+    }
+    
+    array_data
+}
+
 fn oblique_projection_from_3d(file: &str) {
   let data = read_3d_data(file);
   
@@ -143,39 +169,45 @@ fn oblique_projection_from_3d(file: &str) {
   array_to_image(&mut array_2d);
 }
 
-fn main() {    
-    oblique_projection_from_3d("./data/cube.csv");
+fn oblique_projection_from_nd(file: &str) {
+  let data = read_nd_data(file);
+
+  let angle: f64 = 63.4;
+  
+  let mut final_array = data;
+  
+  let numPoints = final_array.len();
+  let mut numDim = final_array[0].len();
+  
+  while numDim > 2 {
+    let mut temp_data: Vec<Vec<f64>> = Vec::new(); 
+    
+    for i in 0..numPoints {
+      temp_data.push(Vec::new());
+      for j in 0..numDim-1 {
+        if j%2 == 0 {
+          temp_data[i].push(final_array[i][j] + 0.5*final_array[i][numDim-1]*angle.cos());
+        } else {
+          temp_data[i].push(final_array[i][j] + 0.5*final_array[i][numDim-1]*angle.sin());
+        }
+      }
+    }
+    numDim-=1;
+
+    final_array.clear();
+    final_array = temp_data;
+  }
+  
+  let mut array_2d: Vec<[f64; 2]> = Vec::new();
+  
+  for i in 0..numPoints {
+    array_2d.push([final_array[i][0], final_array[i][1]]);
+  }
+  
+  array_to_image(&mut array_2d);
 }
 
-/*
-    let mut point = Vec::new();
-
-    point.push([-5.0, -5.0,  -5.0]); 
-    point.push([-5.0,  5.0,  -5.0]);
-    point.push([ 5.0,  5.0,  -5.0]);
-    point.push([ 5.0, -5.0,  -5.0]);
-    
-    point.push([-5.0, -5.0,   5.0]);
-    point.push([-5.0,  5.0,   5.0]);
-    point.push([ 5.0,  5.0,   5.0]);
-    point.push([ 5.0, -5.0,   5.0]);
-    
-    
-    convert_nth_dim_to_2_dim(point);
-
-fn convert_nth_dim_to_2_dim<Vec: AsRef<[Dimension]>, Dimension: AsRef<[V]>, V: Display>(md_array: Vec) {
-  // Each dimension x, y, z, 4th, 5th, 6th etc...
- // println!("{}", md_array.len());
-  let md_array = md_array.as_ref();
-  print!("\t[");
-  for dimension in md_array {
-    let dimension = dimension.as_ref();
-
-    // Every variable in each dimension
-    for i in dimension {
-        print!("{}, ", i);
-    }
-    println!("; {}]", dimension.len());
-  }
-  println!("; {}]", md_array.len());
-}*/
+fn main() {    
+  // oblique_projection_from_3d("./data/cube.csv");
+  oblique_projection_from_nd("./data/cube.csv");
+}
