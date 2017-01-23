@@ -1,9 +1,10 @@
 # Oblique_projection with nth dimension
-Simple Oblique projection program
 
 ## Description
 
-
+A simple nth dimensional oblique projection program made in rust.
+Displays your data as a 2D image, each array in the data set makes a single pixel.
+The closer the pixels are together the more similar the arrays are.
 
 ## Installation
 
@@ -17,23 +18,7 @@ Installing from GitHub:
 
 Place your data in a csv file in data/ folder formated
 
-'''
-## Example csv file
- Leave 1st row empty
- 
-|    |    |    |
-
-| -5 | -5 | -5 |
-
-| -5 |  5 | -5 |
-
-|  5 |  5 | -5 |
-
-|  5 | -5 | -5 |
-
- etc..
- 
-'''
+Use csv files in data/ as examples
 
 Within main.rs change the parameter of function call oblique_projection_from_nd 
 in main to your dataset name.
