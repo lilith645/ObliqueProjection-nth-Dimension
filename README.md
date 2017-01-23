@@ -17,9 +17,23 @@ Installing from GitHub:
 
 Place your data in a csv file in data/ folder formated
 
-### Example basic Cube
-Leave 1st row empty
-Have each array set on a new row
+'''
+## Example csv file
+ Leave 1st row empty
+ 
+|    |    |    |
+
+| -5 | -5 | -5 |
+
+| -5 |  5 | -5 |
+
+|  5 |  5 | -5 |
+
+|  5 | -5 | -5 |
+
+ etc..
+ 
+'''
 
 Within main.rs change the parameter of function call oblique_projection_from_nd 
 in main to your dataset name.
