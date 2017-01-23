@@ -4,6 +4,5 @@ version = "0.1.0"
 authors = ["Lilith645 <lilith@inet-sys.com>"]
 
 [dependencies]
-glium = "*"
 image = "*"
 csv = "0.14"
