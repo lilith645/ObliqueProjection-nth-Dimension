@@ -20,26 +20,11 @@
 
 #[macro_use]
 
-extern crate glium;
 extern crate image;
 extern crate csv;
 
-use std::f64;
 use std::fs::File;
 use std::path::Path;
-
-#[derive(Copy, Clone)] // Some random thing to define the struct to do stuff? i think?
-struct Vertex3f {
-  position: [f64; 3],
-}
-
-#[derive(Copy, Clone)] // Some random thing to define the struct to do stuff? i think?
-struct Vertex2f {
-  position: [f64; 2],
-}
-
-implement_vertex!(Vertex3f, position);
-implement_vertex!(Vertex2f, position);
 
 fn array_to_image(image: &mut Vec<[f64; 2]>) {
     println!("Creating 2D projection");
@@ -47,6 +32,7 @@ fn array_to_image(image: &mut Vec<[f64; 2]>) {
     let mut image_lengthx: i64 = 0;
     let mut image_lengthy: i64 = 0;
   
+    // Find largest point in x and y direction to determine image size
     for i in image.iter_mut() {
       if i[0] < 0.0 {
         if i[0] as i64*-1 > image_lengthx {
@@ -71,15 +57,9 @@ fn array_to_image(image: &mut Vec<[f64; 2]>) {
     
     let image = image;
     
-    if image_lengthx < 0 {
-      image_lengthx*=-1;
-    }
-    if image_lengthy < 0 {
-      image_lengthy*=-1;
-    }
-    
     let mut done: bool = false;
 
+    // Have image size a multiple of 10
     while !done {
       let mut changed: bool = false;
       if image_lengthx%10 != 0 {
@@ -96,6 +76,7 @@ fn array_to_image(image: &mut Vec<[f64; 2]>) {
       }
     }
     
+    // Double the largest x and y point, so that 0, 0 can be in the center
     let sizex: u64 = image_lengthx as u64 * 2; 
     let sizey: u64 = image_lengthy as u64 * 2;
     
@@ -122,12 +103,13 @@ fn array_to_image(image: &mut Vec<[f64; 2]>) {
     
     let _ = image::ImageLuma8(imgbuffer).save(fout, image::PNG);
     
-    println!("Projection created!!");
+    println!("Projection generated!!");
 }
 
 fn read_nd_data(file: &str) -> Vec<Vec<f64>> {
     let mut temp_array_data = Vec::new();
     
+    // Read the csv file
     let mut rdr = csv::Reader::from_file(file).unwrap();
     
     for row in rdr.records().map(|r| r.unwrap()) {
@@ -137,6 +119,7 @@ fn read_nd_data(file: &str) -> Vec<Vec<f64>> {
 
     let mut array_data = Vec::new();
 
+    // Change vector from string to f64
     for i in 0..temp_array_data.len() {
       array_data.push(Vec::new());
       for j in 0..temp_array_data[i].len() {
@@ -151,15 +134,21 @@ fn read_nd_data(file: &str) -> Vec<Vec<f64>> {
 }
 
 fn oblique_projection_from_nd(file: &str) {
+  // Gather data from specified file
   let data = read_nd_data(file);
 
+  // The standard angle in a oblique projection
   let angle: f64 = 63.4;
   
   let mut final_array = data;
   
+  // Number of points in dataset 
   let num_points = final_array.len();
+  
+  // Number of dimensions
   let mut num_dim = final_array[0].len();
   
+  // Apply oblique projection to the vector until it is 2 dimensional array
   while num_dim > 2 {
     let mut temp_data: Vec<Vec<f64>> = Vec::new(); 
     
@@ -178,6 +167,7 @@ fn oblique_projection_from_nd(file: &str) {
     final_array.clear();
     final_array = temp_data;
   }
+  
   let mut largest_num: f64 = 0.0;
   for i in 0..final_array.len() {
     for j in 0..final_array[i].len() {
@@ -187,6 +177,8 @@ fn oblique_projection_from_nd(file: &str) {
     }
   }
   
+  // Shrink or grow the results as to stop memory overloads 
+  // Results in more resonable image output and size
   if largest_num > 10000.0 {
     let mut larger_than_1000: bool = true;
   
@@ -205,9 +197,9 @@ fn oblique_projection_from_nd(file: &str) {
       }
     }
   } else if largest_num < -10000.0 {
-    let mut smaller_than_100: bool = true;
+    let mut smaller_than_10000: bool = true;
     
-    while smaller_than_100 {
+    while smaller_than_10000 {
       let mut check: bool = false;
       for i in 0..final_array.len() {
         for j in 0..final_array[i].len() {
@@ -219,14 +211,14 @@ fn oblique_projection_from_nd(file: &str) {
         }
       }
       if check == false {
-        smaller_than_100 = false;
+        smaller_than_10000 = false;
       }
     }
   }
   
-
   let mut array_2d: Vec<[f64; 2]> = Vec::new();
 
+  // Change array structure for imaging
   for i in 0..num_points {
     array_2d.push([final_array[i][0], final_array[i][1]]);
   }
@@ -235,5 +227,6 @@ fn oblique_projection_from_nd(file: &str) {
 }
 
 fn main() {
+  
   oblique_projection_from_nd("./data/DorotheaData.csv");
 }
